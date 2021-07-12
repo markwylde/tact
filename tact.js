@@ -11,7 +11,6 @@ function shallowCompareArrays (a, b) {
 export default function t (tag, attributes, ...children) {
   const scope = {};
   return {
-    __isTact: true,
     tag,
     attributes,
     children,
