@@ -1,12 +1,12 @@
-import t, { render, useState, useEffect } from './tact.js';
+import { createComponent as t, render, useState, useEffect } from './tact.js';
 
 function MyCounter () {
   const [count, setCount] = useState(0);
   const [auto, setAuto] = useState(false);
 
-  // useEffect(() => {
-  //   document.title = count + ' counts';
-  // });
+  useEffect(() => {
+    document.title = count + ' counts';
+  }, [count]);
 
   useEffect(() => {
     if (!auto) {
