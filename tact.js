@@ -5,17 +5,9 @@ const scopes = {
 function shallowCompareArrays (a, b) {
   a = Array.isArray(a) ? a : [];
   b = Array.isArray(b) ? b : [];
-  return a.length === b.length && a.every((el, ix) => el === b[ix]);
-}
-
-export default function t (tag, attributes, ...children) {
-  const scope = {};
-  return {
-    tag,
-    attributes,
-    children,
-    scope
-  };
+  return a.length === b.length && a.every(
+    (item, index) => item === b[index]
+  );
 }
 
 export function useState (initialState) {
@@ -47,7 +39,17 @@ export function useEffect (runner, dependencies) {
   };
 }
 
-function createComponent (parent, component, attributes, ...children) {
+export function createComponent (tag, attributes, ...children) {
+  const scope = {};
+  return {
+    tag,
+    attributes,
+    children,
+    scope
+  };
+}
+
+function buildComponent (parent, tree) {
   const scope = {
     states: {},
     effects: {}
@@ -57,13 +59,13 @@ function createComponent (parent, component, attributes, ...children) {
   scope.redraw = () => {
     scope.hookId = 0;
     scopes.current = scope;
-    const built = component();
+    const built = tree.tag();
 
     if (scope.element) {
       scope.element.parentNode.removeChild(scope.element);
     }
 
-    scope.element = recurse(parent, built);
+    scope.element = render(built, parent);
     parent.appendChild(scope.element);
 
     Object.keys(scope.effects)
@@ -77,17 +79,18 @@ function createComponent (parent, component, attributes, ...children) {
         }
       });
   };
+
   scope.redraw();
 
   scopes.current = null;
 }
 
-function createElement (parent, tagName, attributes, ...children) {
-  const element = document.createElement(tagName);
-  Object.assign(element, attributes);
+function buildElement (parent, tree) {
+  const element = document.createElement(tree.tag);
+  Object.assign(element, tree.attributes);
 
-  children.forEach(child => {
-    recurse(element, child);
+  tree.children.forEach(child => {
+    render(child, element);
   });
 
   parent.appendChild(element);
@@ -95,21 +98,17 @@ function createElement (parent, tagName, attributes, ...children) {
   return element;
 }
 
-function recurse (parent, tree) {
+export function render (tree, parent) {
   if (tree.tag instanceof Function) {
-    return createComponent(parent, tree.tag, tree.attributes, ...tree.children);
+    return buildComponent(parent, tree);
   }
 
   if (tree.tag) {
-    return createElement(parent, tree.tag, tree.attributes, ...tree.children);
+    return buildElement(parent, tree);
   }
 
   const element = document.createTextNode(tree);
   parent.appendChild(element);
 
   return element;
-}
-
-export function render (tree, mountElement) {
-  return recurse(mountElement, tree);
 }
